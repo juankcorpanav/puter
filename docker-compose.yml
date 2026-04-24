@@ -1,25 +1,33 @@
----
-version: "3.8"
+version: '3.8'
+
 services:
   puter:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: puter
-    image: ghcr.io/heyputer/puter:latest
-    pull_policy: always
-    # build: ./
     restart: unless-stopped
     ports:
-      - '4100:4100'
+      - "4100:4100"
     environment:
-      # TZ: Europe/Paris
-      # CONFIG_PATH: /etc/puter
-      PUID: 1000
-      PGID: 1000
+      - NODE_ENV=${NODE_ENV:-production}
+      - PUTER_HTTP_PORT=${PUTER_HTTP_PORT:-4100}
+      - PUTER_DOMAIN=${PUTER_DOMAIN:-puter.localhost}
     volumes:
-      - ./puter/config:/etc/puter
-      - ./puter/data:/var/puter
+      - puter_data:/var/puter
+    networks:
+      - puter_network
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://puter.localhost:4100/test || exit 1
+      test: ["CMD", "curl", "-f", "http://localhost:4100"]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 40s
+
+volumes:
+  puter_data:
+    driver: local
+
+networks:
+  puter_network:
+    driver: bridge
